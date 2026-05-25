@@ -1,0 +1,13 @@
+{
+  "name": "spidershop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Anonymous Gumroad alternative with TON payments",
+  "scripts": {
+    "dev": "wrangler pages dev public --compatibility-date=2024-01-01",
+    "deploy": "wrangler pages deploy public"
+  },
+  "devDependencies": {
+    "wrangler": "^3.78.0"
+  }
+}

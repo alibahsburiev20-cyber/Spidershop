@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Регистрация — Spidershop</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav__inner">
+      <a href="/" class="nav__logo">Spider<span>shop</span></a>
+      <div class="nav__links">
+        <a href="/login.html">Войти</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container container--narrow">
+    <div class="card">
+      <h2 class="card__title">Регистрация продавца</h2>
+      <div id="alert" class="hidden"></div>
+      <form id="form">
+        <div class="form-row">
+          <label>Email</label>
+          <input id="email" type="email" required autocomplete="email">
+          <div class="hint">Используется только для входа. Никому не показывается.</div>
+        </div>
+        <div class="form-row">
+          <label>Пароль</label>
+          <input id="password" type="password" minlength="6" required autocomplete="new-password">
+        </div>
+        <button type="submit" class="btn btn--primary btn--block btn--lg" id="submit">Создать аккаунт</button>
+      </form>
+      <p class="muted center mt-2">Уже есть аккаунт? <a href="/login.html">Войти</a></p>
+    </div>
+  </div>
+
+  <script type="module">
+    import { signUp, isLoggedIn } from '/js/supabase.js';
+
+    if (isLoggedIn()) location.href = '/dashboard.html';
+
+    const form = document.getElementById('form');
+    const alertBox = document.getElementById('alert');
+    const btn = document.getElementById('submit');
+
+    function showAlert(msg, type = 'error') {
+      alertBox.className = `alert alert--${type}`;
+      alertBox.textContent = msg;
+      alertBox.classList.remove('hidden');
+    }
+
+    form.addEventListener('submit', async e => {
+      e.preventDefault();
+      alertBox.classList.add('hidden');
+      btn.disabled = true;
+      btn.textContent = 'Создаём…';
+      try {
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+        const res = await signUp(email, password);
+        if (res && res.access_token) {
+          location.href = '/dashboard.html';
+        } else {
+          showAlert('Аккаунт создан. Проверь email для подтверждения, затем войди.', 'success');
+          btn.disabled = false;
+          btn.textContent = 'Создать аккаунт';
+        }
+      } catch (err) {
+        showAlert(err.message);
+        btn.disabled = false;
+        btn.textContent = 'Создать аккаунт';
+      }
+    });
+  </script>
+</body>
+</html>
