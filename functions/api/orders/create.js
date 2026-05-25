@@ -1,9 +1,11 @@
 import { sb, json } from '../../_shared/supabase.js';
 import { tonUsdRate, generateMemo } from '../../_shared/ton.js';
+import { pickEnv } from '../../_shared/env.js';
 
 // POST /api/orders/create
 // body: { product_id, buyer_email }
 export async function onRequestPost({ request, env }) {
+  const cfg = pickEnv(env);
   let body;
   try { body = await request.json(); }
   catch { return json({ error: 'Invalid JSON' }, 400); }
@@ -33,7 +35,7 @@ export async function onRequestPost({ request, env }) {
       amount_usd: 0,
       amount_ton: 0,
       ton_rate_usd: 0,
-      pay_address: env.PLATFORM_TON_ADDRESS,
+      pay_address: cfg.PLATFORM_TON_ADDRESS,
       pay_memo: memo,
       status: 'paid',
       download_token: downloadToken,
@@ -67,7 +69,7 @@ export async function onRequestPost({ request, env }) {
     amount_usd: product.price_usd,
     amount_ton: amountTon,
     ton_rate_usd: rate,
-    pay_address: env.PLATFORM_TON_ADDRESS,
+    pay_address: cfg.PLATFORM_TON_ADDRESS,
     pay_memo: memo,
     status: 'pending',
   });

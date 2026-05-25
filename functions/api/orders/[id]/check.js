@@ -1,9 +1,11 @@
 import { sb, json } from '../../../_shared/supabase.js';
 import { findIncomingByMemo } from '../../../_shared/ton.js';
 import { sendReceipt } from '../../../_shared/email.js';
+import { pickEnv } from '../../../_shared/env.js';
 
 // GET /api/orders/:id/check
 export async function onRequestGet({ params, env, request }) {
+  const cfg = pickEnv(env);
   const id = params.id;
   if (!id) return json({ error: 'id required' }, 400);
 
@@ -30,7 +32,7 @@ export async function onRequestGet({ params, env, request }) {
   // Check blockchain
   let found;
   try {
-    found = await findIncomingByMemo(env, env.PLATFORM_TON_ADDRESS, order.pay_memo, Number(order.amount_ton), 0.01);
+    found = await findIncomingByMemo(env, cfg.PLATFORM_TON_ADDRESS, order.pay_memo, Number(order.amount_ton), 0.01);
   } catch (err) {
     console.warn('TON check failed:', err.message);
     return respond(order);
@@ -46,7 +48,7 @@ export async function onRequestGet({ params, env, request }) {
     download_token: downloadToken,
   });
 
-  const feePct = Number(env.PLATFORM_FEE_PERCENT || 5);
+  const feePct = Number(cfg.PLATFORM_FEE_PERCENT || 5);
   const sellerAmount = Number((found.valueTon * (1 - feePct / 100)).toFixed(6));
   const platformFee = Number((found.valueTon - sellerAmount).toFixed(6));
 
