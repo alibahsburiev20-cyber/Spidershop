@@ -1,9 +1,12 @@
 // Resend integration. Silently no-ops if RESEND_API_KEY isn't set.
 
-export async function sendReceipt(env, { to, productTitle, sellerName, downloadUrl, amountTon, amountUsd }) {
-  if (!env.RESEND_API_KEY || !to) return { skipped: true };
+import { pickEnv } from './env.js';
 
-  const from = env.RESEND_FROM || 'Spidershop <onboarding@resend.dev>';
+export async function sendReceipt(env, { to, productTitle, sellerName, downloadUrl, amountTon, amountUsd }) {
+  const cfg = pickEnv(env);
+  if (!cfg.RESEND_API_KEY || !to) return { skipped: true };
+
+  const from = cfg.RESEND_FROM || 'Spidershop <onboarding@resend.dev>';
   const subject = `Покупка: ${productTitle}`;
   const html = `
     <div style="font-family:Inter,Arial,sans-serif;max-width:520px;margin:0 auto;padding:24px;background:#fff;color:#111">
@@ -22,7 +25,7 @@ export async function sendReceipt(env, { to, productTitle, sellerName, downloadU
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${env.RESEND_API_KEY}`,
+      Authorization: `Bearer ${cfg.RESEND_API_KEY}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ from, to, subject, html }),

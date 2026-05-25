@@ -1,9 +1,12 @@
 // tonapi.io v2 client — read-only blockchain helpers.
 
+import { pickEnv } from './env.js';
+
 const TONAPI = 'https://tonapi.io/v2';
 
 function authHeaders(env) {
-  return env.TONAPI_TOKEN ? { Authorization: `Bearer ${env.TONAPI_TOKEN}` } : {};
+  const cfg = pickEnv(env);
+  return cfg.TONAPI_TOKEN ? { Authorization: `Bearer ${cfg.TONAPI_TOKEN}` } : {};
 }
 
 export async function tonUsdRate(env) {

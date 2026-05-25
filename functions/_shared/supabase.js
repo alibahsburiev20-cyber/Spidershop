@@ -1,9 +1,12 @@
 // Service-role Supabase client used inside Pages Functions.
 // Bypasses RLS — never expose this key to the browser.
 
+import { pickEnv } from './env.js';
+
 export function sb(env) {
-  const url = env.SUPABASE_URL;
-  const key = env.SUPABASE_SERVICE_ROLE_KEY;
+  const cfg = pickEnv(env);
+  const url = cfg.SUPABASE_URL;
+  const key = cfg.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) throw new Error('SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY missing');
 
   async function rest(path, opts = {}) {
