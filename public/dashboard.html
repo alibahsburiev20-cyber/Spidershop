@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Кабинет — Spidershop</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav__inner">
+      <a href="/" class="nav__logo">Spider<span>shop</span></a>
+      <div class="nav__links">
+        <a href="/dashboard.html">Кабинет</a>
+        <a href="/new-product.html">+ Товар</a>
+        <a href="#" id="viewStore">Моя витрина</a>
+        <a href="#" id="logout">Выйти</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div id="alert" class="hidden"></div>
+
+    <div class="card">
+      <h2 class="card__title">Профиль</h2>
+      <form id="profileForm">
+        <div class="form-row">
+          <label>Username (используется в /u/your-name)</label>
+          <input id="username" type="text" pattern="[a-z0-9_-]{3,30}" required>
+          <div class="hint">3–30 символов: латиница, цифры, дефис, подчёркивание.</div>
+        </div>
+        <div class="form-row">
+          <label>Имя автора (отображается покупателям)</label>
+          <input id="display_name" type="text" maxlength="60">
+        </div>
+        <div class="form-row">
+          <label>TON-адрес для выплат</label>
+          <input id="ton_address" type="text" placeholder="UQ...">
+          <div class="hint">95% от каждой продажи будет приходить сюда (выплаты пока ручные раз в сутки).</div>
+        </div>
+        <div class="form-row">
+          <label>Био (отображается на витрине)</label>
+          <textarea id="bio" maxlength="500"></textarea>
+        </div>
+        <button class="btn btn--primary" type="submit">Сохранить</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <div class="row">
+        <h2 class="card__title" style="flex:1;margin:0;border:none;padding:0;">Мои товары</h2>
+        <a href="/new-product.html" class="btn btn--primary btn--sm">+ Новый товар</a>
+      </div>
+      <div id="productsList" class="mt-2"></div>
+    </div>
+
+    <div class="card">
+      <h2 class="card__title">История продаж</h2>
+      <div id="ordersList"></div>
+    </div>
+
+    <div class="card">
+      <h2 class="card__title">Мои выплаты</h2>
+      <p class="muted">95% от каждой продажи. Выплаты приходят на твой TON-адрес.</p>
+      <div id="payoutsList"></div>
+    </div>
+  </div>
+
+  <script type="module" src="/js/dashboard.js"></script>
+</body>
+</html>

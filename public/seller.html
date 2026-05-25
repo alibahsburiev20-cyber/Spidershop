@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Витрина — Spidershop</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav__inner">
+      <a href="/" class="nav__logo">Spider<span>shop</span></a>
+      <div class="nav__links">
+        <a href="/login.html">Войти</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div id="alert" class="hidden"></div>
+    <div id="root" class="muted">Загрузка…</div>
+  </div>
+
+  <script type="module">
+    import { select, publicUrl, fmtUsd } from '/js/supabase.js';
+
+    const root = document.getElementById('root');
+    function escapeHtml(s) {
+      return String(s ?? '').replace(/[&<>"']/g, c => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[c]));
+    }
+    function getUsername() {
+      const m = location.pathname.match(/\/u\/([a-z0-9_-]+)/i);
+      return m ? m[1] : new URLSearchParams(location.search).get('u');
+    }
+
+    (async () => {
+      const username = getUsername();
+      if (!username) { root.innerHTML = '<div class="alert alert--error">Не указан username.</div>'; return; }
+
+      let profileRows;
+      try {
+        profileRows = await select('profiles', `?username=eq.${encodeURIComponent(username)}&select=*`);
+      } catch (err) {
+        root.innerHTML = `<div class="alert alert--error">${escapeHtml(err.message)}</div>`;
+        return;
+      }
+      const profile = profileRows[0];
+      if (!profile) {
+        root.innerHTML = '<div class="alert alert--error">Автор не найден.</div>';
+        return;
+      }
+
+      const products = await select('products',
+        `?seller_id=eq.${profile.id}&is_published=eq.true&order=created_at.desc`);
+
+      root.innerHTML = `
+        <div class="card">
+          <h1 style="margin:0 0 4px">${escapeHtml(profile.display_name || profile.username)}</h1>
+          <p class="muted">/u/${escapeHtml(profile.username)}</p>
+          ${profile.bio ? `<p style="white-space:pre-wrap;margin-top:14px">${escapeHtml(profile.bio)}</p>` : ''}
+        </div>
+        ${products.length === 0
+          ? '<p class="muted">У автора пока нет товаров.</p>'
+          : `<div class="products-grid">
+              ${products.map(p => `
+                <div class="product-card">
+                  <a href="/p/${p.id}">
+                    ${p.cover_path
+                      ? `<img class="product-card__cover" src="${publicUrl('covers', p.cover_path)}" alt="">`
+                      : `<div class="product-card__cover product-card__cover--placeholder">📦</div>`}
+                    <div class="product-card__body">
+                      <div class="product-card__title">${escapeHtml(p.title)}</div>
+                      <div class="product-card__price">${Number(p.price_usd) === 0 ? 'Бесплатно' : fmtUsd(p.price_usd)}</div>
+                    </div>
+                  </a>
+                </div>`).join('')}
+            </div>`
+        }
+      `;
+    })();
+  </script>
+</body>
+</html>

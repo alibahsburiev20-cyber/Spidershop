@@ -1,0 +1,12 @@
+name = "spidershop"
+compatibility_date = "2024-01-01"
+pages_build_output_dir = "public"
+
+# Env vars are configured in the Cloudflare Pages dashboard:
+#   SUPABASE_URL
+#   SUPABASE_SERVICE_ROLE_KEY
+#   PLATFORM_TON_ADDRESS
+#   PLATFORM_FEE_PERCENT
+#   TONAPI_TOKEN          (optional)
+#   RESEND_API_KEY        (optional)
+#   RESEND_FROM           (optional)

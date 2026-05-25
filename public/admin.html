@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Админка — Spidershop</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav__inner">
+      <a href="/" class="nav__logo">Spider<span>shop</span></a>
+      <div class="nav__links">
+        <a href="/dashboard.html">Кабинет</a>
+        <a href="#" id="logout">Выйти</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div id="alert" class="hidden"></div>
+    <div id="root" class="muted">Загрузка…</div>
+  </div>
+
+  <script type="module">
+    import { isLoggedIn, signOut, userId, select, update, fmtTon, fmtDate } from '/js/supabase.js';
+
+    if (!isLoggedIn()) location.href = '/login.html';
+    document.getElementById('logout').addEventListener('click', e => { e.preventDefault(); signOut(); location.href = '/'; });
+
+    const root = document.getElementById('root');
+    const alertBox = document.getElementById('alert');
+
+    function showAlert(msg, type = 'error') {
+      alertBox.className = `alert alert--${type}`;
+      alertBox.textContent = msg;
+      alertBox.classList.remove('hidden');
+      setTimeout(() => alertBox.classList.add('hidden'), 4000);
+    }
+    function escapeHtml(s) {
+      return String(s ?? '').replace(/[&<>"']/g, c => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[c]));
+    }
+
+    async function load() {
+      const meRows = await select('profiles', `?id=eq.${userId()}&select=is_admin`);
+      if (!meRows[0]?.is_admin) {
+        root.innerHTML = '<div class="alert alert--error">Доступ только для админов. Установи is_admin=true в SQL.</div>';
+        return;
+      }
+
+      const pending = await select('payouts',
+        `?status=eq.pending&order=created_at.asc&select=*,seller:seller_id(username,display_name,ton_address),order:order_id(buyer_email,product_id,product:product_id(title))`);
+
+      const sent = await select('payouts', `?status=eq.sent&order=sent_at.desc&limit=20&select=*,seller:seller_id(username)`);
+
+      root.innerHTML = `
+        <div class="card">
+          <h2 class="card__title">Ожидающие выплаты</h2>
+          ${pending.length === 0 ? '<p class="muted">Нечего выплачивать.</p>' : `
+            <table class="table">
+              <thead><tr><th>Дата</th><th>Продавец</th><th>TON-адрес</th><th>Сумма (95%)</th><th>Товар</th><th></th></tr></thead>
+              <tbody>
+                ${pending.map(p => `
+                  <tr>
+                    <td>${fmtDate(p.created_at)}</td>
+                    <td>${escapeHtml(p.seller?.display_name || p.seller?.username || '—')}</td>
+                    <td><code style="font-size:11px">${escapeHtml(p.seller?.ton_address || '—')}</code></td>
+                    <td><b>${fmtTon(p.seller_amount)}</b></td>
+                    <td>${escapeHtml(p.order?.product?.title || '—')}</td>
+                    <td>
+                      <button class="btn btn--sm btn--success" data-mark="${p.id}">Отметить выплаченной</button>
+                    </td>
+                  </tr>`).join('')}
+              </tbody>
+            </table>`}
+        </div>
+
+        <div class="card">
+          <h2 class="card__title">Последние выплаты</h2>
+          ${sent.length === 0 ? '<p class="muted">—</p>' : `
+            <table class="table">
+              <thead><tr><th>Дата</th><th>Кому</th><th>Сумма</th><th>TX</th></tr></thead>
+              <tbody>
+                ${sent.map(p => `
+                  <tr>
+                    <td>${fmtDate(p.sent_at || p.created_at)}</td>
+                    <td>${escapeHtml(p.seller?.username || '—')}</td>
+                    <td>${fmtTon(p.seller_amount)}</td>
+                    <td>${p.payout_tx ? `<a href="https://tonviewer.com/transaction/${p.payout_tx}" target="_blank">${p.payout_tx.slice(0, 14)}…</a>` : '—'}</td>
+                  </tr>`).join('')}
+              </tbody>
+            </table>`}
+        </div>
+      `;
+
+      root.querySelectorAll('[data-mark]').forEach(btn => btn.addEventListener('click', async () => {
+        const tx = prompt('Введи хэш транзакции выплаты:');
+        if (!tx) return;
+        try {
+          await update('payouts', `?id=eq.${btn.dataset.mark}`, {
+            status: 'sent',
+            payout_tx: tx.trim(),
+            sent_at: new Date().toISOString(),
+          });
+          await load();
+          showAlert('Выплата отмечена', 'success');
+        } catch (err) { showAlert(err.message); }
+      }));
+    }
+
+    load().catch(err => { root.innerHTML = ''; showAlert(err.message); });
+  </script>
+</body>
+</html>

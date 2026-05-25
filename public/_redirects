@@ -1,0 +1,4 @@
+/p/*       /product.html   200
+/u/*       /seller.html    200
+/pay/*     /pay.html       200
+/download/* /download.html 200

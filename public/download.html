@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Скачивание — Spidershop</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav__inner">
+      <a href="/" class="nav__logo">Spider<span>shop</span></a>
+    </div>
+  </nav>
+
+  <div class="container container--narrow">
+    <div id="alert" class="hidden"></div>
+    <div class="card" id="root">
+      <div class="muted center">Готовим файл…</div>
+    </div>
+  </div>
+
+  <script>
+    const tokenMatch = location.pathname.match(/\/download\/([0-9a-f-]{36})/i);
+    const token = tokenMatch ? tokenMatch[1] : new URLSearchParams(location.search).get('token');
+    const root = document.getElementById('root');
+    const alertBox = document.getElementById('alert');
+
+    function showError(msg) {
+      alertBox.className = 'alert alert--error';
+      alertBox.textContent = msg;
+      alertBox.classList.remove('hidden');
+    }
+
+    function escapeHtml(s) {
+      return String(s ?? '').replace(/[&<>"']/g, c => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[c]));
+    }
+
+    (async () => {
+      if (!token) { showError('Не указан токен.'); root.innerHTML = ''; return; }
+      try {
+        const res = await fetch(`/api/download/${token}`);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+        root.innerHTML = `
+          <h2>✅ Оплата получена</h2>
+          <p class="muted">${escapeHtml(data.product_title || '')}</p>
+          <p>Ссылка действительна 1 час. Использовано скачиваний: ${data.download_count}/${data.download_limit}.</p>
+          <a class="btn btn--success btn--block btn--lg" href="${escapeHtml(data.signed_url)}" download="${escapeHtml(data.file_name || '')}">
+            Скачать ${escapeHtml(data.file_name || 'файл')}
+          </a>
+          <p class="muted center mt-2" style="font-size:12px">
+            Сохрани эту страницу. Если ссылка перестала работать — обнови, мы выдадим новую.
+          </p>
+        `;
+      } catch (err) {
+        showError(err.message);
+        root.innerHTML = '';
+      }
+    })();
+  </script>
+</body>
+</html>
